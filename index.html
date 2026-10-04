@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Movie Deal Calculator</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111827;background:#f3f4f6}
+*{box-sizing:border-box}body{margin:0;min-height:100vh}
+.app{max-width:520px;margin:auto;padding:18px 16px 30px}
+h1{font-size:25px;margin:4px 0 3px}.sub{color:#6b7280;font-size:14px;margin-bottom:18px}
+.card{background:#fff;border-radius:20px;padding:17px;margin:12px 0;box-shadow:0 4px 18px #0000000b}
+.label{font-size:13px;font-weight:700;color:#6b7280;margin-bottom:8px;display:block}
+.ticket-row{display:flex;align-items:center;justify-content:center;gap:22px;padding:5px 0 16px}
+.circle{width:52px;height:52px;border:0;border-radius:50%;background:#e5e7eb;font-size:28px;cursor:pointer}
+.qty{font-size:34px;font-weight:800;min-width:48px;text-align:center}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+input{width:100%;border:1px solid #d1d5db;border-radius:12px;padding:13px;font-size:17px;background:#fff}
+.offers{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.offer{border:1px solid #d1d5db;background:#fff;border-radius:11px;padding:11px 5px;font-weight:750;font-size:12px;cursor:pointer}
+.offer.active{background:#111827;color:#fff;border-color:#111827}
+.rows{display:grid;gap:10px}.row{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.row strong{white-space:nowrap}.minus{color:#b91c1c}
+.final{background:#111827;color:#fff;border-radius:22px;padding:21px;margin-top:14px}
+.final small{color:#cbd5e1;font-weight:700;letter-spacing:.06em}.amount{font-size:40px;font-weight:900;margin-top:4px}.save{color:#d1d5db;font-size:13px;margin-top:7px}
+.reset{width:100%;padding:13px;border:1px solid #d1d5db;background:#fff;border-radius:12px;font-weight:700;margin-top:12px}
+@media(max-width:360px){.grid{grid-template-columns:1fr}.offers{grid-template-columns:1fr}.app{padding:14px 12px}}
+</style>
+</head>
+<body>
+<main class="app">
+<h1>🎬 Movie Deal Calculator</h1>
+<div class="sub">Calculate your actual amount after offers and GV discount.</div>
+
+<section class="card">
+<label class="label">NUMBER OF TICKETS</label>
+<div class="ticket-row">
+<button class="circle" id="minus" aria-label="Decrease tickets">−</button>
+<div class="qty" id="qty">2</div>
+<button class="circle" id="plus" aria-label="Increase tickets">+</button>
+</div>
+
+<div class="grid">
+<div><label class="label" for="price">Ticket price (₹)</label><input id="price" type="number" min="0" step="1" value="200"></div>
+<div><label class="label" for="fee">Fee / ticket (₹)</label><input id="fee" type="number" min="0" step="1" value="25"></div>
+</div>
+
+<div style="margin-top:16px">
+<label class="label">SELECT OFFER</label>
+<div class="offers">
+<button class="offer active" data-offer="none">No Offer</button>
+<button class="offer" data-offer="b1g1">B1G1<br>Free</button>
+<button class="offer" data-offer="b2g1">B2G1<br>Free</button>
+</div>
+</div>
+
+<div style="margin-top:16px">
+<label class="label" for="gv">GV DISCOUNT (%)</label>
+<input id="gv" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal">
+</div>
+</section>
+
+<section class="card">
+<div class="rows">
+<div class="row"><span>Ticket subtotal</span><strong id="subtotal">₹400.00</strong></div>
+<div class="row"><span>Convenience fees</span><strong id="fees">₹50.00</strong></div>
+<div class="row"><span>Total before offer</span><strong id="gross">₹450.00</strong></div>
+<div class="row"><span id="offerLabel">Offer discount</span><strong class="minus" id="offerDiscount">− ₹0.00</strong></div>
+<div class="row"><span>After offer</span><strong id="after">₹450.00</strong></div>
+<div class="row"><span>GV discount</span><strong class="minus" id="gvDiscount">− ₹0.00</strong></div>
+</div>
+</section>
+
+<section class="final">
+<small>FINAL AMOUNT TO PAY</small>
+<div class="amount" id="final">₹450.00</div>
+<div class="save" id="info">No free tickets</div>
+</section>
+
+<button class="reset" id="reset">Reset</button>
+</main>
+<script>
+let offer='none';
+const $=id=>document.getElementById(id);
+const money=n=>'₹'+n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+function calc(){
+ const q=Math.max(1,parseInt($('qty').textContent)||1);
+ const p=Math.max(0,parseFloat($('price').value)||0);
+ const f=Math.max(0,parseFloat($('fee').value)||0);
+ const gv=Math.min(100,Math.max(0,parseFloat($('gv').value)||0));
+ const subtotal=q*p, fees=q*f, gross=subtotal+fees;
+ let free=offer==='b1g1'?Math.floor(q/2):offer==='b2g1'?Math.floor(q/3):0;
+ const discount=Math.min(gross,free*p), after=gross-discount, gvDisc=after*gv/100, final=Math.max(0,after-gvDisc);
+ $('subtotal').textContent=money(subtotal);$('fees').textContent=money(fees);$('gross').textContent=money(gross);
+ $('offerDiscount').textContent='− '+money(discount);$('after').textContent=money(after);$('gvDiscount').textContent='− '+money(gvDisc);$('final').textContent=money(final);
+ $('offerLabel').textContent=offer==='none'?'Offer discount':offer==='b1g1'?'B1G1 discount':'B2G1 discount';
+ $('info').textContent=free?`${free} free ticket${free>1?'s':''} • Saved ${money(discount)}${gv?` • GV saved ${money(gvDisc)}`:''}`:`No free tickets${gv?` • GV saved ${money(gvDisc)}`:''}`;
+}
+$('minus').onclick=()=>{$('qty').textContent=Math.max(1,(parseInt($('qty').textContent)||1)-1);calc()};
+$('plus').onclick=()=>{$('qty').textContent=(parseInt($('qty').textContent)||1)+1;calc()};
+document.querySelectorAll('.offer').forEach(b=>b.onclick=()=>{document.querySelectorAll('.offer').forEach(x=>x.classList.remove('active'));b.classList.add('active');offer=b.dataset.offer;calc()});
+['price','fee','gv'].forEach(id=>$(id).addEventListener('input',calc));
+$('reset').onclick=()=>{$('qty').textContent=2;$('price').value=200;$('fee').value=25;$('gv').value=0;offer='none';document.querySelectorAll('.offer').forEach(x=>x.classList.toggle('active',x.dataset.offer==='none'));calc()};
+calc();
+</script>
+</body></html>
